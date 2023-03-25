@@ -34,3 +34,64 @@ namespace EvolveGames
 		}
 	}
 }
+using System;
+using UnityEngine;
+
+namespace EvolveGames
+{
+	// Token: 0x02000009 RID: 9
+	public class MovementEffects : MonoBehaviour
+	{
+		// Token: 0x0600001D RID: 29 RVA: 0x00002CC1 File Offset: 0x00000EC1
+		private void Start()
+		{
+			this.Player = base.GetComponentInParent<PlayerController>();
+			this.InstallRotation = base.transform.localRotation;
+		}
+
+		// Token: 0x0600001E RID: 30 RVA: 0x00002CE0 File Offset: 0x00000EE0
+		private void Update()
+		{
+			float num = this.Player.vertical * this.RotationAmount;
+			float z = -this.Player.horizontal * this.RotationAmount;
+			this.MovementVector = new Vector3(this.CanMovementFX ? (num + this.Player.characterController.velocity.y * this.MovementAmount) : num, 0f, z);
+			base.transform.localRotation = Quaternion.Lerp(base.transform.localRotation, Quaternion.Euler(this.MovementVector + this.InstallRotation.eulerAngles), Time.deltaTime * this.RotationSmooth);
+		}
+
+		// Token: 0x0600001F RID: 31 RVA: 0x00002D90 File Offset: 0x00000F90
+		public MovementEffects()
+		{
+		}
+
+		// Token: 0x0400003C RID: 60
+		[Header("MOVEMENT FX")]
+		[SerializeField]
+		private PlayerController Player;
+
+		// Token: 0x0400003D RID: 61
+		[SerializeField]
+		[Range(0.05f, 2f)]
+		private float RotationAmount = 0.2f;
+
+		// Token: 0x0400003E RID: 62
+		[SerializeField]
+		[Range(1f, 20f)]
+		private float RotationSmooth = 6f;
+
+		// Token: 0x0400003F RID: 63
+		[Header("Movement")]
+		[SerializeField]
+		private bool CanMovementFX = true;
+
+		// Token: 0x04000040 RID: 64
+		[SerializeField]
+		[Range(0.1f, 2f)]
+		private float MovementAmount = 0.5f;
+
+		// Token: 0x04000041 RID: 65
+		private Quaternion InstallRotation;
+
+		// Token: 0x04000042 RID: 66
+		private Vector3 MovementVector;
+	}
+}
