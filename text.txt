@@ -5,106 +5,9 @@ namespace EvolveGames
 {
 	// Token: 0x0200000A RID: 10
 	[RequireComponent(typeof(CharacterController))]
-	public partial class PlayerController : MonoBehaviour
-	{
-		// Token: 0x06000025 RID: 37 RVA: 0x00003478 File Offset: 0x00001678
-		public PlayerController()
-		{
-			this.walkingSpeed = 3f;
-			this.CroughSpeed = 1f;
-			this.RuningSpeed = 4f;
-			this.jumpSpeed = 6f;
-			this.lookSpeed = 2f;
-			this.lookXLimit = 100f;
-			this.RunningFOV = 65f;
-			this.SpeedToFOV = 4f;
-			this.CroughHeight = 1f;
-			this.gravity = 0f;
-			this.timeToRunning = 2f;
-			this.canMove = true;
-			this.CanRunning = true;
-			this.CanClimbing = true;
-			this.Speed = 2f;
-			this.CanHideDistanceWall = true;
-			this.HideDistance = 0f;
-			this.LayerMaskInt = 1;
-			this.CroughKey = KeyCode.LeftControl;
-			this.moveDirection = Vector3.zero;
-			base..ctor();
-		}
-	}
-}
-using System;
-using UnityEngine;
-
-namespace EvolveGames
-{
-	// Token: 0x02000009 RID: 9
-	public class MovementEffects : MonoBehaviour
-	{
-		// Token: 0x0600001D RID: 29 RVA: 0x00002CC1 File Offset: 0x00000EC1
-		private void Start()
-		{
-			this.Player = base.GetComponentInParent<PlayerController>();
-			this.InstallRotation = base.transform.localRotation;
-		}
-
-		// Token: 0x0600001E RID: 30 RVA: 0x00002CE0 File Offset: 0x00000EE0
-		private void Update()
-		{
-			float num = this.Player.vertical * this.RotationAmount;
-			float z = -this.Player.horizontal * this.RotationAmount;
-			this.MovementVector = new Vector3(this.CanMovementFX ? (num + this.Player.characterController.velocity.y * this.MovementAmount) : num, 0f, z);
-			base.transform.localRotation = Quaternion.Lerp(base.transform.localRotation, Quaternion.Euler(this.MovementVector + this.InstallRotation.eulerAngles), Time.deltaTime * this.RotationSmooth);
-		}
-
-		// Token: 0x0600001F RID: 31 RVA: 0x00002D90 File Offset: 0x00000F90
-		public MovementEffects()
-		{
-		}
-
-		// Token: 0x0400003C RID: 60
-		[Header("MOVEMENT FX")]
-		[SerializeField]
-		private PlayerController Player;
-
-		// Token: 0x0400003D RID: 61
-		[SerializeField]
-		[Range(0.05f, 2f)]
-		private float RotationAmount = 0.2f;
-
-		// Token: 0x0400003E RID: 62
-		[SerializeField]
-		[Range(1f, 20f)]
-		private float RotationSmooth = 6f;
-
-		// Token: 0x0400003F RID: 63
-		[Header("Movement")]
-		[SerializeField]
-		private bool CanMovementFX = true;
-
-		// Token: 0x04000040 RID: 64
-		[SerializeField]
-		[Range(0.1f, 2f)]
-		private float MovementAmount = 0.5f;
-
-		// Token: 0x04000041 RID: 65
-		private Quaternion InstallRotation;
-
-		// Token: 0x04000042 RID: 66
-		private Vector3 MovementVector;
-	}
-}
-using System;
-using UnityEngine;
-
-namespace EvolveGames
-{
-	// Token: 0x0200000A RID: 10
-	[RequireComponent(typeof(CharacterController))]
 	public class PlayerController : MonoBehaviour
 	{
-		// Token: 0x06000020 RID: 32
+		// Token: 0x06000020 RID: 32 RVA: 0x00002DC0 File Offset: 0x00000FC0
 		private void Start()
 		{
 			this.characterController = base.GetComponent<CharacterController>();
@@ -114,7 +17,7 @@ namespace EvolveGames
 			}
 			this.cam = base.GetComponentInChildren<Camera>();
 			Cursor.lockState = CursorLockMode.Locked;
-			Cursor.visible = true;
+			Cursor.visible = false;
 			this.InstallCroughHeight = this.characterController.height;
 			this.InstallCameraMovement = this.Camera.localPosition;
 			this.InstallFOV = this.cam.fieldOfView;
@@ -123,10 +26,10 @@ namespace EvolveGames
 			this.WalkingValue = this.walkingSpeed;
 		}
 
-		// Token: 0x06000021 RID: 33
+		// Token: 0x06000021 RID: 33 RVA: 0x00002E70 File Offset: 0x00001070
 		private void Update()
 		{
-			if (this.characterController.isGrounded && this.isClimbing)
+			if (!this.characterController.isGrounded && !this.isClimbing)
 			{
 				this.moveDirection.y = this.moveDirection.y - this.gravity * Time.deltaTime;
 			}
@@ -147,7 +50,7 @@ namespace EvolveGames
 			this.moveDirection = a * this.vertical + a2 * this.horizontal;
 			if (Input.GetButton("Jump") && this.canMove && this.characterController.isGrounded && !this.isClimbing)
 			{
-				this.moveDirection.y = 30f;
+				this.moveDirection.y = this.jumpSpeed;
 			}
 			else
 			{
@@ -188,7 +91,7 @@ namespace EvolveGames
 				this.WalkingValue = Mathf.Lerp(this.WalkingValue, this.walkingSpeed, 4f * Time.deltaTime);
 			}
 			RaycastHit raycastHit2;
-			if (this.WallDistance == Physics.Raycast(base.GetComponentInChildren<Camera>().transform.position, base.transform.TransformDirection(Vector3.forward), out raycastHit2, this.HideDistance, this.LayerMaskInt) && this.CanHideDistanceWall)
+			if (this.WallDistance != Physics.Raycast(base.GetComponentInChildren<Camera>().transform.position, base.transform.TransformDirection(Vector3.forward), out raycastHit2, this.HideDistance, this.LayerMaskInt) && this.CanHideDistanceWall)
 			{
 				this.WallDistance = Physics.Raycast(base.GetComponentInChildren<Camera>().transform.position, base.transform.TransformDirection(Vector3.forward), out raycastHit2, this.HideDistance, this.LayerMaskInt);
 				this.Items.ani.SetBool("Hide", this.WallDistance);
@@ -196,7 +99,7 @@ namespace EvolveGames
 			}
 		}
 
-		// Token: 0x06000022 RID: 34
+		// Token: 0x06000022 RID: 34 RVA: 0x00003350 File Offset: 0x00001550
 		private void OnTriggerEnter(Collider other)
 		{
 			if (other.tag == "Ladder" && this.CanClimbing)
@@ -204,11 +107,11 @@ namespace EvolveGames
 				this.CanRunning = false;
 				this.isClimbing = true;
 				this.WalkingValue /= 2f;
-				this.Items.Hide(false);
+				this.Items.Hide(true);
 			}
 		}
 
-		// Token: 0x06000023 RID: 35
+		// Token: 0x06000023 RID: 35 RVA: 0x000033A4 File Offset: 0x000015A4
 		private void OnTriggerStay(Collider other)
 		{
 			if (other.tag == "Ladder" && this.CanClimbing)
@@ -217,7 +120,7 @@ namespace EvolveGames
 			}
 		}
 
-		// Token: 0x06000024 RID: 36
+		// Token: 0x06000024 RID: 36 RVA: 0x0000340C File Offset: 0x0000160C
 		private void OnTriggerExit(Collider other)
 		{
 			if (other.tag == "Ladder" && this.CanClimbing)
@@ -230,7 +133,7 @@ namespace EvolveGames
 			}
 		}
 
-		// Token: 0x06000025 RID: 37
+		// Token: 0x06000025 RID: 37 RVA: 0x00003478 File Offset: 0x00001678
 		public PlayerController()
 		{
 		}
@@ -261,12 +164,12 @@ namespace EvolveGames
 		// Token: 0x04000048 RID: 72
 		[SerializeField]
 		[Range(0f, 20f)]
-		private float jumpSpeed = 10f;
+		private float jumpSpeed = 6f;
 
 		// Token: 0x04000049 RID: 73
 		[SerializeField]
 		[Range(0.5f, 10f)]
-		private float lookSpeed = 4f;
+		private float lookSpeed = 2f;
 
 		// Token: 0x0400004A RID: 74
 		[SerializeField]
@@ -289,7 +192,7 @@ namespace EvolveGames
 
 		// Token: 0x0400004E RID: 78
 		[SerializeField]
-		private float gravity = 5f;
+		private float gravity = 20f;
 
 		// Token: 0x0400004F RID: 79
 		[SerializeField]
@@ -321,7 +224,7 @@ namespace EvolveGames
 		[Space(20f)]
 		[Header("HandsHide")]
 		[SerializeField]
-		private bool CanHideDistanceWall;
+		private bool CanHideDistanceWall = true;
 
 		// Token: 0x04000056 RID: 86
 		[SerializeField]
