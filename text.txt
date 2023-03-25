@@ -95,3 +95,310 @@ namespace EvolveGames
 		private Vector3 MovementVector;
 	}
 }
+using System;
+using UnityEngine;
+
+namespace EvolveGames
+{
+	// Token: 0x0200000A RID: 10
+	[RequireComponent(typeof(CharacterController))]
+	public class PlayerController : MonoBehaviour
+	{
+		// Token: 0x06000020 RID: 32
+		private void Start()
+		{
+			this.characterController = base.GetComponent<CharacterController>();
+			if (this.Items == null && base.GetComponent<ItemChange>())
+			{
+				this.Items = base.GetComponent<ItemChange>();
+			}
+			this.cam = base.GetComponentInChildren<Camera>();
+			Cursor.lockState = CursorLockMode.Locked;
+			Cursor.visible = true;
+			this.InstallCroughHeight = this.characterController.height;
+			this.InstallCameraMovement = this.Camera.localPosition;
+			this.InstallFOV = this.cam.fieldOfView;
+			this.RunningValue = this.RuningSpeed;
+			this.installGravity = this.gravity;
+			this.WalkingValue = this.walkingSpeed;
+		}
+
+		// Token: 0x06000021 RID: 33
+		private void Update()
+		{
+			if (this.characterController.isGrounded && this.isClimbing)
+			{
+				this.moveDirection.y = this.moveDirection.y - this.gravity * Time.deltaTime;
+			}
+			Vector3 a = base.transform.TransformDirection(Vector3.forward);
+			Vector3 a2 = base.transform.TransformDirection(Vector3.right);
+			this.isRunning = (!this.isCrough && this.CanRunning && Input.GetKey(KeyCode.LeftShift));
+			this.vertical = (this.canMove ? ((this.isRunning ? this.RunningValue : this.WalkingValue) * Input.GetAxis("Vertical")) : 0f);
+			this.horizontal = (this.canMove ? ((this.isRunning ? this.RunningValue : this.WalkingValue) * Input.GetAxis("Horizontal")) : 0f);
+			if (this.isRunning)
+			{
+				this.RunningValue = Mathf.Lerp(this.RunningValue, this.RuningSpeed, this.timeToRunning * Time.deltaTime);
+			}
+			else
+			{
+				this.RunningValue = this.WalkingValue;
+			}
+			float y = this.moveDirection.y;
+			this.moveDirection = a * this.vertical + a2 * this.horizontal;
+			if (Input.GetButton("Jump") && this.canMove && this.characterController.isGrounded && !this.isClimbing)
+			{
+				this.moveDirection.y = 30f;
+			}
+			else
+			{
+				this.moveDirection.y = y;
+			}
+			this.characterController.Move(this.moveDirection * Time.deltaTime);
+			this.Moving = (this.horizontal < 0f || this.vertical < 0f || this.horizontal > 0f || this.vertical > 0f);
+			if (Cursor.lockState == CursorLockMode.Locked && this.canMove)
+			{
+				this.Lookvertical = -Input.GetAxis("Mouse Y");
+				this.Lookhorizontal = Input.GetAxis("Mouse X");
+				this.rotationX += this.Lookvertical * this.lookSpeed;
+				this.rotationX = Mathf.Clamp(this.rotationX, -this.lookXLimit, this.lookXLimit);
+				this.Camera.transform.localRotation = Quaternion.Euler(this.rotationX, 0f, 0f);
+				base.transform.rotation *= Quaternion.Euler(0f, this.Lookhorizontal * this.lookSpeed, 0f);
+				if (this.isRunning && this.Moving)
+				{
+					this.cam.fieldOfView = Mathf.Lerp(this.cam.fieldOfView, this.RunningFOV, this.SpeedToFOV * Time.deltaTime);
+				}
+				else
+				{
+					this.cam.fieldOfView = Mathf.Lerp(this.cam.fieldOfView, this.InstallFOV, this.SpeedToFOV * Time.deltaTime);
+				}
+			}
+			RaycastHit raycastHit;
+			if (Input.GetKey(this.CroughKey))
+			{
+				this.isCrough = true;
+				float height = Mathf.Lerp(this.characterController.height, this.CroughHeight, 5f * Time.deltaTime);
+				this.characterController.height = height;
+				this.WalkingValue = Mathf.Lerp(this.WalkingValue, this.CroughSpeed, 6f * Time.deltaTime);
+			}
+			else if (!Physics.Raycast(base.GetComponentInChildren<Camera>().transform.position, base.transform.TransformDirection(Vector3.up), out raycastHit, 0.8f, 1) && this.characterController.height != this.InstallCroughHeight)
+			{
+				this.isCrough = false;
+				float height2 = Mathf.Lerp(this.characterController.height, this.InstallCroughHeight, 6f * Time.deltaTime);
+				this.characterController.height = height2;
+				this.WalkingValue = Mathf.Lerp(this.WalkingValue, this.walkingSpeed, 4f * Time.deltaTime);
+			}
+			RaycastHit raycastHit2;
+			if (this.WallDistance == Physics.Raycast(base.GetComponentInChildren<Camera>().transform.position, base.transform.TransformDirection(Vector3.forward), out raycastHit2, this.HideDistance, this.LayerMaskInt) && this.CanHideDistanceWall)
+			{
+				this.WallDistance = Physics.Raycast(base.GetComponentInChildren<Camera>().transform.position, base.transform.TransformDirection(Vector3.forward), out raycastHit2, this.HideDistance, this.LayerMaskInt);
+				this.Items.ani.SetBool("Hide", this.WallDistance);
+				this.Items.DefiniteHide = this.WallDistance;
+			}
+		}
+
+		// Token: 0x06000022 RID: 34
+		private void OnTriggerEnter(Collider other)
+		{
+			if (other.tag == "Ladder" && this.CanClimbing)
+			{
+				this.CanRunning = false;
+				this.isClimbing = true;
+				this.WalkingValue /= 2f;
+				this.Items.Hide(false);
+			}
+		}
+
+		// Token: 0x06000023 RID: 35
+		private void OnTriggerStay(Collider other)
+		{
+			if (other.tag == "Ladder" && this.CanClimbing)
+			{
+				this.moveDirection = new Vector3(0f, Input.GetAxis("Vertical") * this.Speed * (-this.Camera.localRotation.x / 1.7f), 0f);
+			}
+		}
+
+		// Token: 0x06000024 RID: 36
+		private void OnTriggerExit(Collider other)
+		{
+			if (other.tag == "Ladder" && this.CanClimbing)
+			{
+				this.CanRunning = true;
+				this.isClimbing = false;
+				this.WalkingValue *= 2f;
+				this.Items.ani.SetBool("Hide", false);
+				this.Items.Hide(false);
+			}
+		}
+
+		// Token: 0x06000025 RID: 37
+		public PlayerController()
+		{
+		}
+
+		// Token: 0x04000043 RID: 67
+		[Header("PlayerController")]
+		[SerializeField]
+		public Transform Camera;
+
+		// Token: 0x04000044 RID: 68
+		[SerializeField]
+		public ItemChange Items;
+
+		// Token: 0x04000045 RID: 69
+		[SerializeField]
+		[Range(1f, 10f)]
+		private float walkingSpeed = 3f;
+
+		// Token: 0x04000046 RID: 70
+		[Range(0.1f, 5f)]
+		public float CroughSpeed = 1f;
+
+		// Token: 0x04000047 RID: 71
+		[SerializeField]
+		[Range(2f, 20f)]
+		private float RuningSpeed = 4f;
+
+		// Token: 0x04000048 RID: 72
+		[SerializeField]
+		[Range(0f, 20f)]
+		private float jumpSpeed = 10f;
+
+		// Token: 0x04000049 RID: 73
+		[SerializeField]
+		[Range(0.5f, 10f)]
+		private float lookSpeed = 4f;
+
+		// Token: 0x0400004A RID: 74
+		[SerializeField]
+		[Range(10f, 120f)]
+		private float lookXLimit = 80f;
+
+		// Token: 0x0400004B RID: 75
+		[Space(20f)]
+		[Header("Advance")]
+		[SerializeField]
+		private float RunningFOV = 65f;
+
+		// Token: 0x0400004C RID: 76
+		[SerializeField]
+		private float SpeedToFOV = 4f;
+
+		// Token: 0x0400004D RID: 77
+		[SerializeField]
+		private float CroughHeight = 1f;
+
+		// Token: 0x0400004E RID: 78
+		[SerializeField]
+		private float gravity = 5f;
+
+		// Token: 0x0400004F RID: 79
+		[SerializeField]
+		private float timeToRunning = 2f;
+
+		// Token: 0x04000050 RID: 80
+		[HideInInspector]
+		public bool canMove = true;
+
+		// Token: 0x04000051 RID: 81
+		[HideInInspector]
+		public bool CanRunning = true;
+
+		// Token: 0x04000052 RID: 82
+		[Space(20f)]
+		[Header("Climbing")]
+		[SerializeField]
+		private bool CanClimbing = true;
+
+		// Token: 0x04000053 RID: 83
+		[SerializeField]
+		[Range(1f, 25f)]
+		private float Speed = 2f;
+
+		// Token: 0x04000054 RID: 84
+		private bool isClimbing;
+
+		// Token: 0x04000055 RID: 85
+		[Space(20f)]
+		[Header("HandsHide")]
+		[SerializeField]
+		private bool CanHideDistanceWall;
+
+		// Token: 0x04000056 RID: 86
+		[SerializeField]
+		[Range(0.1f, 5f)]
+		private float HideDistance = 1.5f;
+
+		// Token: 0x04000057 RID: 87
+		[SerializeField]
+		private int LayerMaskInt = 1;
+
+		// Token: 0x04000058 RID: 88
+		[Space(20f)]
+		[Header("Input")]
+		[SerializeField]
+		private KeyCode CroughKey = KeyCode.LeftControl;
+
+		// Token: 0x04000059 RID: 89
+		[HideInInspector]
+		public CharacterController characterController;
+
+		// Token: 0x0400005A RID: 90
+		[HideInInspector]
+		public Vector3 moveDirection = Vector3.zero;
+
+		// Token: 0x0400005B RID: 91
+		private bool isCrough;
+
+		// Token: 0x0400005C RID: 92
+		private float InstallCroughHeight;
+
+		// Token: 0x0400005D RID: 93
+		private float rotationX;
+
+		// Token: 0x0400005E RID: 94
+		[HideInInspector]
+		public bool isRunning;
+
+		// Token: 0x0400005F RID: 95
+		private Vector3 InstallCameraMovement;
+
+		// Token: 0x04000060 RID: 96
+		private float InstallFOV;
+
+		// Token: 0x04000061 RID: 97
+		private Camera cam;
+
+		// Token: 0x04000062 RID: 98
+		[HideInInspector]
+		public bool Moving;
+
+		// Token: 0x04000063 RID: 99
+		[HideInInspector]
+		public float vertical;
+
+		// Token: 0x04000064 RID: 100
+		[HideInInspector]
+		public float horizontal;
+
+		// Token: 0x04000065 RID: 101
+		[HideInInspector]
+		public float Lookvertical;
+
+		// Token: 0x04000066 RID: 102
+		[HideInInspector]
+		public float Lookhorizontal;
+
+		// Token: 0x04000067 RID: 103
+		private float RunningValue;
+
+		// Token: 0x04000068 RID: 104
+		private float installGravity;
+
+		// Token: 0x04000069 RID: 105
+		private bool WallDistance;
+
+		// Token: 0x0400006A RID: 106
+		[HideInInspector]
+		public float WalkingValue;
+	}
+}
