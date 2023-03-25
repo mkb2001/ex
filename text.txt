@@ -1,0 +1,36 @@
+using System;
+using UnityEngine;
+
+namespace EvolveGames
+{
+	// Token: 0x0200000A RID: 10
+	[RequireComponent(typeof(CharacterController))]
+	public partial class PlayerController : MonoBehaviour
+	{
+		// Token: 0x06000025 RID: 37 RVA: 0x00003478 File Offset: 0x00001678
+		public PlayerController()
+		{
+			this.walkingSpeed = 3f;
+			this.CroughSpeed = 1f;
+			this.RuningSpeed = 4f;
+			this.jumpSpeed = 6f;
+			this.lookSpeed = 2f;
+			this.lookXLimit = 100f;
+			this.RunningFOV = 65f;
+			this.SpeedToFOV = 4f;
+			this.CroughHeight = 1f;
+			this.gravity = 0f;
+			this.timeToRunning = 2f;
+			this.canMove = true;
+			this.CanRunning = true;
+			this.CanClimbing = true;
+			this.Speed = 2f;
+			this.CanHideDistanceWall = true;
+			this.HideDistance = 0f;
+			this.LayerMaskInt = 1;
+			this.CroughKey = KeyCode.LeftControl;
+			this.moveDirection = Vector3.zero;
+			base..ctor();
+		}
+	}
+}
